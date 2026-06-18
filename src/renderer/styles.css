@@ -1,0 +1,155 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: #0d1117;
+  color: #e6edf3;
+  user-select: none;
+}
+
+/* ---- Menu-bar popover panel ---- */
+.panel {
+  padding: 14px 16px 16px;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b949e;
+}
+.status.loud {
+  color: #ff4d4d;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  background: #010409;
+}
+
+.controls {
+  margin: 12px 0;
+}
+.controls .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.controls label {
+  color: #c9d1d9;
+}
+.controls input[type='range'] {
+  width: 100%;
+  margin: 6px 0;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #8b949e;
+}
+
+#toggle {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 0;
+  border-radius: 8px;
+  border: none;
+  background: #238636;
+  color: #fff;
+  cursor: pointer;
+}
+#toggle:hover {
+  background: #2ea043;
+}
+#toggle.running {
+  background: #b62324;
+}
+#toggle.running:hover {
+  background: #d83a3b;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #c9d1d9;
+  cursor: pointer;
+}
+.check input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #6e7681;
+}
+
+footer {
+  margin-top: 10px;
+  text-align: right;
+}
+.link {
+  background: none;
+  border: none;
+  color: #6e7681;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.link:hover {
+  color: #c9d1d9;
+}
+
+/* ---- Flash overlay window ---- */
+.overlay-body {
+  background: transparent !important;
+  margin: 0;
+  overflow: hidden;
+}
+
+.overlay-border {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  border: 0 solid transparent;
+}
+
+.overlay-border.active {
+  border-width: 20px;
+  border-style: solid;
+  animation: loud-pulse 0.45s infinite alternate;
+}
+
+@keyframes loud-pulse {
+  from {
+    border-color: rgba(255, 0, 0, 0.35);
+  }
+  to {
+    border-color: rgba(255, 0, 0, 0.95);
+  }
+}

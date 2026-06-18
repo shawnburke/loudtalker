@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Loud Talker</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="panel">
+    <header>
+      <h1>Loud Talker</h1>
+      <span id="status" class="status">Idle</span>
+    </header>
+
+    <canvas id="graph" width="398" height="200"></canvas>
+
+    <div class="controls">
+      <div class="row">
+        <label for="threshold">Threshold</label>
+        <span id="threshold-value" class="mono">60</span>
+      </div>
+      <input id="threshold" type="range" min="0" max="100" value="60" />
+      <div class="row">
+        <span id="level" class="mono">Level: 0</span>
+      </div>
+    </div>
+
+    <button id="toggle">Go</button>
+
+    <label class="check">
+      <input type="checkbox" id="listen-on-start" checked />
+      Listen on start
+    </label>
+
+    <p class="hint">
+      Set the threshold just above your normal speaking level. When you cross it,
+      a red border flashes around your whole screen — even when this popover is
+      closed.
+    </p>
+
+    <footer>
+      <button id="quit" class="link">Quit</button>
+    </footer>
+
+    <script src="./main_renderer.js"></script>
+  </body>
+</html>
