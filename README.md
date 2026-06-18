@@ -46,6 +46,12 @@ make run
 | `make run`     | Depends on `install`; builds and launches the app.                  |
 | `make start`   | Alias for `make run`.                                               |
 | `make clean`   | Remove `dist/` and `node_modules/`.                                 |
+| `make reset`   | `clean` + clear Electron's global download cache. Use if Electron won't install. |
+
+`make install` self-heals a common Electron hiccup: if Electron's binary
+download didn't complete (so `node_modules/electron` is missing its `path.txt`
+or `dist/`), the next `make install`/`make run` re-fetches the binary
+automatically. If it's still wedged, run `make reset` then `make run`.
 
 You can also use the npm scripts directly: `npm install`, `npm run build`,
 `npm start`.
