@@ -23,6 +23,8 @@ const minConsValueEl = document.getElementById('min-consecutive-value') as HTMLS
 const processorSelect = document.getElementById('processor-select') as HTMLSelectElement;
 const crestThresholdInput = document.getElementById('crest-threshold') as HTMLInputElement;
 const crestThresholdValueEl = document.getElementById('crest-threshold-value') as HTMLSpanElement;
+const micDeniedEl = document.getElementById('mic-denied') as HTMLDivElement;
+const openMicSettingsBtn = document.getElementById('open-mic-settings') as HTMLButtonElement;
 const g = canvas.getContext('2d')!;
 
 const WIDTH = canvas.width;
@@ -206,8 +208,14 @@ function setLoud(next: LoudState): void {
 }
 
 async function start(): Promise<void> {
+  micDeniedEl.classList.add('hidden');
+  const granted = await window.loudTalker.requestMic();
+  if (!granted) {
+    statusEl.textContent = 'Mic permission denied';
+    micDeniedEl.classList.remove('hidden');
+    return;
+  }
   try {
-    await window.loudTalker.requestMic();
     stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: false,
@@ -217,6 +225,7 @@ async function start(): Promise<void> {
     });
   } catch {
     statusEl.textContent = 'Mic permission denied';
+    micDeniedEl.classList.remove('hidden');
     return;
   }
 
@@ -380,7 +389,11 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) draw();
 });
 
-toggleBtn.addEventListener('click', () => (running ? stop() : start()));
+toggleBtn.addEventListener('click', () => {
+  micDeniedEl.classList.add('hidden');
+  running ? stop() : start();
+});
+openMicSettingsBtn.addEventListener('click', () => window.loudTalker.openMicSettings());
 quitBtn.addEventListener('click', () => window.loudTalker.quit());
 draw();
 

@@ -6,6 +6,7 @@ import {
   nativeImage,
   screen,
   session,
+  shell,
   systemPreferences,
   Tray,
 } from 'electron';
@@ -176,12 +177,21 @@ app.whenReady().then(() => {
   ipcMain.handle('request-mic', async () => {
     if (process.platform === 'darwin') {
       try {
+        const status = systemPreferences.getMediaAccessStatus('microphone');
+        if (status === 'denied') return false;
+        if (status === 'granted') return true;
         return await systemPreferences.askForMediaAccess('microphone');
       } catch {
         return false;
       }
     }
     return true;
+  });
+
+  ipcMain.on('open-mic-settings', () => {
+    if (process.platform === 'darwin') {
+      shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
+    }
   });
 
   // Forward loud-state from the meter to the flash overlay + tray title.

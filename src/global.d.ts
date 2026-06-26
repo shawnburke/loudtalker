@@ -13,6 +13,8 @@ declare global {
       onLoudState(cb: (state: LoudState) => void): void;
       /** Ask macOS for microphone access (no-op / true on other platforms). */
       requestMic(): Promise<boolean>;
+      /** Open macOS System Settings to the microphone privacy pane. */
+      openMicSettings(): void;
       /** Quit the whole app. */
       quit(): void;
     };

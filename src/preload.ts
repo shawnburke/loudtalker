@@ -6,5 +6,6 @@ contextBridge.exposeInMainWorld('loudTalker', {
   onLoudState: (cb: (state: LoudState) => void) =>
     ipcRenderer.on('loud-state', (_e, state: LoudState) => cb(state)),
   requestMic: () => ipcRenderer.invoke('request-mic'),
+  openMicSettings: () => ipcRenderer.send('open-mic-settings'),
   quit: () => ipcRenderer.send('quit'),
 });
