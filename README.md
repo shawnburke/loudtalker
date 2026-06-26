@@ -1,14 +1,24 @@
 # Loud Talker
 
-A macOS menu-bar app that gives you hard-to-ignore visual feedback when you're
-talking too loudly on calls. It lives in the menu bar, watches your microphone
-level, and **flashes a red border around your whole screen** when you cross a
-threshold you set — so you notice and dial it back, even mid-Zoom.
+_If you work from home and the whole house can hear you, this is for you_
+
+Use biofeedback to learn how to talk just a little quieter.
+
+A MacOS menu-bar app that gives you hard-to-ignore visual feedback when you're
+talking too loudly. 
+
+* App lives in menu bar and watches microphone
+* Uses auto-gain and crest factor to fiilter out other sounds like typing, etc.
+* Stores separate thresholds per device (built-in mic vs headphones)
+* Allows tuning specific thresholds
+
+When triggered it flashes a yellow or red border around your whole screen, so you see it even when an app is in full-screen mode.
 
 Built with Electron + TypeScript.
 
 <img width="434" height="440" alt="image" src="https://github.com/user-attachments/assets/033494b5-f233-4061-93d7-7b25b5f9abfe" />
 
+<img width="420" height="526" alt="image" src="https://github.com/user-attachments/assets/5b29e14c-a97b-46ac-b354-2874ca59fc00" />
 
 ## Features
 
@@ -119,4 +129,4 @@ scripts/
 
 ## License
 
-MIT
+GPL-3
