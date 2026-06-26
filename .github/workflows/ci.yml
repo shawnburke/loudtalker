@@ -32,7 +32,12 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm run package
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Loud-Talker-dmg
-          path: dist/*.dmg
+      - name: Create Release
+        run: |
+          gh release create "v$(jq -r .version package.json)-${{ github.run_id }}" \
+            dist/*.dmg \
+            --title "Build ${{ github.run_id }}" \
+            --notes "Automated build from ${{ github.sha }}" \
+            --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
