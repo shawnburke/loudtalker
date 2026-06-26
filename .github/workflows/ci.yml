@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+    tags: ['v*']
 
 jobs:
   test:
@@ -20,8 +21,7 @@ jobs:
       - run: npm test
 
   package:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-latest
     permissions:
       contents: write
@@ -36,10 +36,10 @@ jobs:
       - run: npm run package
       - name: Create Release
         run: |
-          gh release create "v$(jq -r .version package.json)-${{ github.run_id }}" \
+          gh release create "${GITHUB_REF_NAME}" \
             dist/*.dmg \
-            --title "Build ${{ github.run_id }}" \
-            --notes "Automated build from ${{ github.sha }}" \
+            --title "Loud Talker ${GITHUB_REF_NAME}" \
+            --notes "See the [changelog](COMMIT_URL_BASE/HEAD..${GITHUB_REF_NAME}) for details." \
             --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
