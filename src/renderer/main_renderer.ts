@@ -1,6 +1,6 @@
 import { AudioFrame, Processor, LegacyProcessor, CrestFactorProcessor, createProcessor } from './processors';
 
-const toggleBtn = document.getElementById('toggle') as HTMLButtonElement;
+const statusPill = document.getElementById('status-pill') as HTMLDivElement;
 const quitBtn = document.getElementById('quit') as HTMLButtonElement;
 const listenOnStartEl = document.getElementById('listen-on-start') as HTMLInputElement;
 const autoGainEl = document.getElementById('auto-gain') as HTMLInputElement;
@@ -30,6 +30,8 @@ const levelNum = document.getElementById('level-num') as HTMLSpanElement;
 const tickWarn = document.getElementById('tick-warn') as HTMLDivElement;
 const tickLimit = document.getElementById('tick-limit') as HTMLDivElement;
 const g = canvas.getContext('2d')!;
+
+statusPill.style.cursor = 'pointer';
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
@@ -220,35 +222,35 @@ function graphColor(state: LoudState): string {
   return state === 'limit' ? '#ef4444' : state === 'warning' ? '#e8b931' : '#e9ebef';
 }
 
+function updateStatusPill(): void {
+  if (!running) {
+    statusDot.style.background = '#5b616b';
+    statusDot.classList.remove('pulse');
+    statusLabel.textContent = 'Start';
+    statusLabel.style.color = '#5b616b';
+    return;
+  }
+  statusDot.classList.add('pulse');
+  if (loud === 'warning') {
+    statusDot.style.background = '#e8b931';
+    statusLabel.textContent = 'Getting loud';
+    statusLabel.style.color = '#e8b931';
+  } else if (loud === 'limit') {
+    statusDot.style.background = '#ef4444';
+    statusLabel.textContent = 'TOO LOUD';
+    statusLabel.style.color = '#ef4444';
+  } else {
+    statusDot.style.background = '#8a8f98';
+    statusLabel.textContent = 'Listening';
+    statusLabel.style.color = '#9aa0a9';
+  }
+}
+
 function setLoud(next: LoudState): void {
   if (next === loud) return;
   loud = next;
   window.loudTalker.sendLoudState(loud);
-
-  if (!running) {
-    statusDot.style.background = '#5b616b';
-    statusDot.classList.remove('pulse');
-    statusLabel.textContent = 'Idle';
-    statusLabel.style.color = '#5b616b';
-    return;
-  }
-
-  if (loud === 'off') {
-    statusDot.style.background = '#8a8f98';
-    statusDot.classList.add('pulse');
-    statusLabel.textContent = 'Listening';
-    statusLabel.style.color = '#9aa0a9';
-  } else if (loud === 'warning') {
-    statusDot.style.background = '#e8b931';
-    statusDot.classList.add('pulse');
-    statusLabel.textContent = 'Getting loud';
-    statusLabel.style.color = '#e8b931';
-  } else {
-    statusDot.style.background = '#ef4444';
-    statusDot.classList.add('pulse');
-    statusLabel.textContent = 'TOO LOUD';
-    statusLabel.style.color = '#ef4444';
-  }
+  if (running) updateStatusPill();
 }
 
 function updateLevelMeter(): void {
@@ -321,9 +323,8 @@ async function start(): Promise<void> {
 
   running = true;
   window.loudTalker.setRunning(true);
-  toggleBtn.textContent = 'Stop';
-  toggleBtn.classList.add('running');
   setLoud('off');
+  updateStatusPill();
   timerId = window.setInterval(tick, SAMPLE_MS);
 }
 
@@ -339,8 +340,7 @@ function stop(): void {
   analyser = null;
   timeData = null;
 
-  toggleBtn.textContent = 'Go';
-  toggleBtn.classList.remove('running');
+  updateStatusPill();
   displayLevel = 0;
   lastWarningTime = 0;
   lastLimitTime = 0;
@@ -456,7 +456,7 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) draw();
 });
 
-toggleBtn.addEventListener('click', () => {
+statusPill.addEventListener('click', () => {
   micDeniedEl.classList.add('hidden');
   running ? stop() : start();
 });
@@ -464,6 +464,7 @@ openMicSettingsBtn.addEventListener('click', () => window.loudTalker.openMicSett
 quitBtn.addEventListener('click', () => window.loudTalker.quit());
 
 setLoud('off');
+updateStatusPill();
 updateLevelMeter();
 draw();
 

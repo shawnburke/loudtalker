@@ -1,5 +1,5 @@
 // Generates macOS menu-bar tray icons for the 3 Loud Talker states:
-//   normal   — bullhorn glyph only (template image, macOS tints it)
+//   normal   — bullhorn glyph, larger, as template image (macOS tints it)
 //   warning  — yellow badge + dark glyph
 //   alert    — red badge + white glyph
 //
@@ -54,17 +54,10 @@ function strokeStrip(pts, r) {
 
 // ---- Icon generation ----
 
-const VW = 36; // design viewport width
+const VW = 36;
 const VH = 36;
 
-// Badge
-const badge = [
-  [1.5, 1.5],
-  [34.5, 1.5],
-  [34.5, 34.5],
-  [1.5, 34.5],
-]; // clipped by rx below
-
+// Badge (rounded rect, used by warning/alert)
 function inBadge(x, y) {
   const rx = 9, ry = 9;
   const l = 1.5, r = 34.5, t = 1.5, b = 34.5;
@@ -76,52 +69,94 @@ function inBadge(x, y) {
   return true;
 }
 
-// Glyph paths in the scaled 36x36 viewport
+// Badge border: strip 0.8px inside the badge edge
+function inBadgeBorder(x, y) {
+  const bw = 0.8;
+  if (!inBadge(x, y)) return false;
+  // A pixel is on the border if we can move bw inward and leave the badge
+  const cx = x, cy = y;
+  const inward = bw * 0.707; // diagonal component
+  // Check 4 diagonal directions — if any exits the badge, we're near the edge
+  const dirs = [[inward, 0], [-inward, 0], [0, inward], [0, -inward]];
+  for (const [dx, dy] of dirs) {
+    if (!inBadge(cx + dx, cy + dy)) return true;
+  }
+  return false;
+}
+
+// ---- Glyph paths for badge (smaller, inside badge) ----
 // The design SVGs use: transform="translate(8.2 8.2) scale(0.7)"
-// So we apply the inverse for rendering: our coords are in the 36x36 space
 const S = 0.7;
 const TX = 8.2;
 const TY = 8.2;
 
-function gx(x) { return x * S + TX; }
-function gy(y) { return y * S + TY; }
+function bgx(x) { return x * S + TX; }
+function bgy(y) { return y * S + TY; }
 
-// Horn cone (polygon)
-const horn = [
-  [6, 11], [15, 6], [15, 22], [6, 17],
-].map(p => [gx(p[0]), gy(p[1])]);
-
-// Mouthpiece (rectangle with rounded corners approximated as rect)
-const mouth = [
-  [3.2, 11], [6.4, 11], [6.4, 17], [3.2, 17],
-].map(p => [gx(p[0]), gy(p[1])]);
-function inMouth(x, y) {
-  const l = gx(3.2), r = gx(6.4), t = gy(11), b = gy(17);
-  return x >= l && x <= r && y >= t && y <= b;
+function badgeGlyphPaths() {
+  const gx = bgx, gy = bgy;
+  const horn = [[6, 11], [15, 6], [15, 22], [6, 17]].map(p => [gx(p[0]), gy(p[1])]);
+  const mouth = [[3.2, 11], [6.4, 11], [6.4, 17], [3.2, 17]].map(p => [gx(p[0]), gy(p[1])]);
+  function inMouth(x, y) {
+    const l = gx(3.2), r = gx(6.4), t = gy(11), b = gy(17);
+    return x >= l && x <= r && y >= t && y <= b;
+  }
+  const handle = [[8.6, 17], [11.4, 17], [10.7, 22.6], [9.3, 22.6]].map(p => [gx(p[0]), gy(p[1])]);
+  function makeArc(pts) {
+    const scaled = pts.map(p => [gx(p[0]), gy(p[1])]);
+    const samples = quadBezierPoints(...scaled, 16);
+    return strokeStrip(samples, 0.7);
+  }
+  const arc1 = makeArc([[17, 9], [20.4, 14], [17, 19]]);
+  const arc2 = makeArc([[19.6, 7.2], [24, 14], [19.6, 20.8]]);
+  const polys = [horn, mouth, handle, arc1, arc2];
+  return { polys, inMouth };
 }
 
-// Handle (parallelogram)
-const handle = [
-  [8.6, 17], [11.4, 17], [10.7, 22.6], [9.3, 22.6],
-].map(p => [gx(p[0]), gy(p[1])]);
+const badgeGlyph = badgeGlyphPaths();
 
-// Sound arcs — quadratic beziers with stroke width ~1.7 (in glyph space)
-function makeArc(pts) {
-  const scaled = pts.map(p => [gx(p[0]), gy(p[1])]);
-  const samples = quadBezierPoints(...scaled, 16);
-  return strokeStrip(samples, 0.7); // approx stroke width in output space
+function inBadgeGlyph(x, y) {
+  for (const poly of badgeGlyph.polys) {
+    if (poly === badgeGlyph.polys[1]) { if (badgeGlyph.inMouth(x, y)) return true; continue; }
+    if (pointInPolygon(x, y, poly)) return true;
+  }
+  return false;
 }
 
-// M17 9 Q20.4 14 17 19
-const arc1 = makeArc([[17, 9], [20.4, 14], [17, 19]]);
-// M19.6 7.2 Q24 14 19.6 20.8
-const arc2 = makeArc([[19.6, 7.2], [24, 14], [19.6, 20.8]]);
+// ---- Glyph paths for template (larger, fills canvas) ----
+// Scale to fill ~28px of the 36px viewport
+const TS = 1.26;
+const TTX = 0.86;
+const TTY = -0.77;
 
-const glyphPolys = [horn, mouth, handle, arc1, arc2];
+function tgx(x) { return x * TS + TTX; }
+function tgy(y) { return y * TS + TTY; }
 
-function inGlyph(x, y) {
-  for (const poly of glyphPolys) {
-    if (poly === mouth) { if (inMouth(x, y)) return true; continue; }
+function templateGlyphPaths() {
+  const gx = tgx, gy = tgy;
+  const horn = [[6, 11], [15, 6], [15, 22], [6, 17]].map(p => [gx(p[0]), gy(p[1])]);
+  const mouth = [[3.2, 11], [6.4, 11], [6.4, 17], [3.2, 17]].map(p => [gx(p[0]), gy(p[1])]);
+  function inMouth(x, y) {
+    const l = gx(3.2), r = gx(6.4), t = gy(11), b = gy(17);
+    return x >= l && x <= r && y >= t && y <= b;
+  }
+  const handle = [[8.6, 17], [11.4, 17], [10.7, 22.6], [9.3, 22.6]].map(p => [gx(p[0]), gy(p[1])]);
+  function makeArc(pts) {
+    const scaled = pts.map(p => [gx(p[0]), gy(p[1])]);
+    const samples = quadBezierPoints(...scaled, 16);
+    return strokeStrip(samples, 0.7 * (TS / S)); // adjust stroke for scale
+  }
+  const arc1 = makeArc([[17, 9], [20.4, 14], [17, 19]]);
+  const arc2 = makeArc([[19.6, 7.2], [24, 14], [19.6, 20.8]]);
+  const polys = [horn, mouth, handle, arc1, arc2];
+  return { polys, inMouth };
+}
+
+const templateGlyph = templateGlyphPaths();
+
+function inTemplateGlyph(x, y) {
+  for (const poly of templateGlyph.polys) {
+    if (poly === templateGlyph.polys[1]) { if (templateGlyph.inMouth(x, y)) return true; continue; }
     if (pointInPolygon(x, y, poly)) return true;
   }
   return false;
@@ -147,6 +182,49 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc]);
 }
 
+function makeDockPng(size) {
+  const sw = size;
+  const buf = new Float32Array(sw * sw);
+  const glyphBuf = new Float32Array(sw * sw);
+
+  for (let y = 0; y < sw; y++) {
+    for (let x = 0; x < sw; x++) {
+      const px = (x + 0.5) * (VW / sw);
+      const py = (y + 0.5) * (VH / sw);
+      const inBad = inBadge(px, py);
+      const inGl = inBadgeGlyph(px, py);
+      buf[y * sw + x] = (inBad || inGl) ? 255 : 0;
+      glyphBuf[y * sw + x] = inGl ? 255 : 0;
+    }
+  }
+
+  const w = size, h = size;
+  const stride = w * 4 + 1;
+  const raw = Buffer.alloc(stride * h);
+
+  for (let y = 0; y < h; y++) {
+    raw[y * stride] = 0;
+    for (let x = 0; x < w; x++) {
+      const v = buf[y * w + x];
+      const g = glyphBuf[y * w + x];
+      const off = y * stride + 1 + x * 4;
+      if (g > 0) {
+        raw[off] = 26; raw[off + 1] = 22; raw[off + 2] = 6;
+      } else {
+        raw[off] = 232; raw[off + 1] = 185; raw[off + 2] = 49;
+      }
+      raw[off + 3] = Math.round(v);
+    }
+  }
+
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8; ihdr[9] = 6;
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+
 function makePng(size, variant) {
   // variant: 'template' | 'warning' | 'alert'
   const ss = 4;
@@ -158,21 +236,20 @@ function makePng(size, variant) {
       const px = (x + 0.5) * (VW / sw);
       const py = (y + 0.5) * (VH / sw);
 
-      const inBad = inBadge(px, py);
-      const inGl = inGlyph(px, py);
-
       if (variant === 'template') {
-        // Pure black glyph on transparent — macOS tints the whole thing
-        buf[y * sw + x] = inGl ? 255 : 0;
-      } else if (variant === 'warning') {
-        // Yellow badge (#e8b931) with dark glyph (#1a1606)
-        if (inGl) buf[y * sw + x] = 255; // glyph — full opacity (black in template terms)
-        else if (inBad) buf[y * sw + x] = 255; // badge — also opaque (yellow)
-        // else transparent
-      } else { // alert
-        // Red badge (#ef4444) with white glyph (#ffffff)
-        if (inGl) buf[y * sw + x] = 255; // glyph
-        else if (inBad) buf[y * sw + x] = 255; // badge
+        // Glyph only — macOS tints all non-transparent pixels as template image
+        buf[y * sw + x] = inTemplateGlyph(px, py) ? 255 : 0;
+      } else {
+        // Badge + smaller glyph
+        const inBad = inBadge(px, py);
+        const inGl = inBadgeGlyph(px, py);
+        if (inGl) {
+          buf[y * sw + x] = 255; // glyph — opaque
+        } else if (inBad) {
+          // Badge fill: semi-transparent (lighter in menu bar)
+          const onBorder = inBadgeBorder(px, py);
+          buf[y * sw + x] = onBorder ? 255 : 160;
+        }
       }
     }
   }
@@ -193,19 +270,11 @@ function makePng(size, variant) {
       const off = y * stride + 1 + x * 4;
 
       if (variant === 'template') {
-        raw[off] = 0;
-        raw[off + 1] = 0;
-        raw[off + 2] = 0;
+        raw[off] = 0; raw[off + 1] = 0; raw[off + 2] = 0;
       } else if (variant === 'warning') {
-        // #e8b931 → R=232 G=185 B=49
-        raw[off] = 232;
-        raw[off + 1] = 185;
-        raw[off + 2] = 49;
-      } else { // alert
-        // #ef4444 → R=239 G=68 B=68
-        raw[off] = 239;
-        raw[off + 1] = 68;
-        raw[off + 2] = 68;
+        raw[off] = 232; raw[off + 1] = 185; raw[off + 2] = 49;
+      } else {
+        raw[off] = 239; raw[off + 1] = 68; raw[off + 2] = 68;
       }
       raw[off + 3] = a;
     }
@@ -214,15 +283,9 @@ function makePng(size, variant) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0);
   ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8;
-  ihdr[9] = 6;
+  ihdr[8] = 8; ihdr[9] = 6;
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  return Buffer.concat([
-    sig,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', zlib.deflateSync(raw)),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
+  return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 }
 
 const dir = path.join(__dirname, '..', 'assets');
@@ -239,3 +302,7 @@ for (const v of variants) {
   fs.writeFileSync(path.join(dir, `${v.file}@2x.png`), makePng(32, v.type));
   console.log(`wrote assets/${v.file}.png and @2x (${v.type})`);
 }
+
+console.log('generating dock icon...');
+fs.writeFileSync(path.join(dir, 'appIcon.png'), makeDockPng(512));
+console.log('wrote assets/appIcon.png');

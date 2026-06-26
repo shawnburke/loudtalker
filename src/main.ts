@@ -177,10 +177,16 @@ app.whenReady().then(() => {
   ipcMain.handle('request-mic', async () => {
     if (process.platform === 'darwin') {
       try {
-        const status = systemPreferences.getMediaAccessStatus('microphone');
-        if (status === 'denied') return false;
-        if (status === 'granted') return true;
-        return await systemPreferences.askForMediaAccess('microphone');
+        let status = systemPreferences.getMediaAccessStatus('microphone');
+        // If denied, still try asking — user may have just enabled in System Settings
+        // and the cached status hasn't updated yet for this process.
+        if (status === 'denied' || status === 'not-determined') {
+          const asked = await systemPreferences.askForMediaAccess('microphone');
+          if (asked) return true;
+          // Re-check after asking in case user enabled mid-session
+          status = systemPreferences.getMediaAccessStatus('microphone');
+        }
+        return status === 'granted';
       } catch {
         return false;
       }

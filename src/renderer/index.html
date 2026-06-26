@@ -25,6 +25,16 @@
       <span class="graph-db">dB</span>
     </div>
 
+    <div class="level-row">
+      <span class="level-label">Level</span>
+      <div class="level-track">
+        <div id="level-fill" class="level-fill" style="width: 0%"></div>
+        <div id="tick-warn" class="level-tick lv-warn"></div>
+        <div id="tick-limit" class="level-tick lv-limit"></div>
+      </div>
+      <span id="level-num" class="level-num">0</span>
+    </div>
+
     <div class="slider-block">
       <div class="row">
         <label for="warning">Warning</label>
@@ -44,18 +54,6 @@
         <input id="limit" type="range" min="0" max="100" value="75" />
       </div>
     </div>
-
-    <div class="level-row">
-      <span class="level-label">Level</span>
-      <div class="level-track">
-        <div id="level-fill" class="level-fill" style="width: 0%"></div>
-        <div id="tick-warn" class="level-tick lv-warn"></div>
-        <div id="tick-limit" class="level-tick lv-limit"></div>
-      </div>
-      <span id="level-num" class="level-num">0</span>
-    </div>
-
-    <button id="toggle">Go</button>
 
     <div class="device-row">
       <span id="device-name" class="device-name"></span>

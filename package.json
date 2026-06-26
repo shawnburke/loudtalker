@@ -24,6 +24,7 @@
     "mac": {
       "target": "dmg",
       "category": "public.app-category.productivity",
+      "icon": "assets/appIcon.png",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Loud Talker needs microphone access to monitor your speaking volume."
       }
