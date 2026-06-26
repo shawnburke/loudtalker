@@ -1,4 +1,4 @@
-.PHONY: install build run start clean reset package package-dir
+.PHONY: install build run start clean reset package package-dir test
 
 # Set up the full build environment. Idempotent: only reinstalls when
 # package.json changes (the node_modules timestamp gates it).
@@ -20,6 +20,10 @@ node_modules: package.json
 # Compile TypeScript and copy renderer assets into dist/.
 build: install
 	npm run build
+
+# Run unit tests.
+test: install
+	npm test
 
 # Build and launch the menu-bar app. Depends on install.
 run: install
