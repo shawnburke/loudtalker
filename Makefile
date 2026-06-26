@@ -1,4 +1,4 @@
-.PHONY: install build run start clean reset
+.PHONY: install build run start clean reset package package-dir
 
 # Set up the full build environment. Idempotent: only reinstalls when
 # package.json changes (the node_modules timestamp gates it).
@@ -27,6 +27,14 @@ run: install
 
 # Alias for `make run`.
 start: run
+
+# Package as a macOS .dmg installer.
+package: install
+	npm run package
+
+# Build an unpacked .app directory (no dmg) — useful for testing.
+package-dir: install
+	npm run package:dir
 
 # Remove build output and installed dependencies.
 clean:

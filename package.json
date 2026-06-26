@@ -7,12 +7,28 @@
     "build": "tsc && npm run copy-assets",
     "copy-assets": "cp src/renderer/*.html src/renderer/*.css dist/renderer/",
     "start": "npm run build && electron .",
-    "dev": "npm run start"
+    "dev": "npm run start",
+    "package": "npm run build && electron-builder --mac",
+    "package:dir": "npm run build && electron-builder --mac --dir"
+  },
+  "build": {
+    "appId": "com.shawnburke.loud-talker",
+    "productName": "Loud Talker",
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    }
   },
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.9.0",
     "electron": "^33.2.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.6.3"
   }
 }
