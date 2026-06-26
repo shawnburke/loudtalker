@@ -162,7 +162,7 @@ canvas {
 }
 
 .mic-denied {
-  margin-top: 10px;
+  margin-bottom: 10px;
   padding: 8px 10px;
   font-size: 12px;
   background: #3d1f1f;

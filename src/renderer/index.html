@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body class="panel">
+    <div id="mic-denied" class="mic-denied hidden">
+      <span>Mic permission denied.</span>
+      <button id="open-mic-settings" class="link">Open System Settings</button>
+    </div>
+
     <header>
       <h1>Loud Talker</h1>
       <span id="status" class="status">Idle</span>
@@ -99,11 +104,6 @@
       Limit higher for when you're really too loud (red flash, persists longer).
       All flashes work even when this popover is closed.
     </p>
-
-    <div id="mic-denied" class="mic-denied hidden">
-      <span>Mic permission denied.</span>
-      <button id="open-mic-settings" class="link">Open System Settings</button>
-    </div>
 
     <footer>
       <button id="quit" class="link">Quit</button>

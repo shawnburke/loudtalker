@@ -9,8 +9,8 @@
     "bundle-renderer": "esbuild src/renderer/main_renderer.ts --bundle --outfile=dist/renderer/main_renderer.js --platform=browser --format=iife",
     "start": "npm run build && electron .",
     "dev": "npm run start",
-"package": "npm run build && electron-builder --mac --publish=never",
-"package:dir": "npm run build && electron-builder --mac --dir --publish=never",
+    "package": "npm run build && electron-builder --mac --publish=never",
+    "package:dir": "npm run build && electron-builder --mac --dir --publish=never",
     "test": "vitest run"
   },
   "build": {
@@ -23,7 +23,10 @@
     ],
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Loud Talker needs microphone access to monitor your speaking volume."
+      }
     }
   },
   "license": "MIT",
