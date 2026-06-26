@@ -16,10 +16,15 @@
 
     <div class="controls">
       <div class="row">
-        <label for="threshold">Threshold</label>
-        <span id="threshold-value" class="mono">60</span>
+        <label for="warning">Warning</label>
+        <span id="warning-value" class="mono">60</span>
       </div>
-      <input id="threshold" type="range" min="0" max="100" value="60" />
+      <input id="warning" type="range" min="0" max="100" value="60" />
+      <div class="row">
+        <label for="limit">Limit</label>
+        <span id="limit-value" class="mono">80</span>
+      </div>
+      <input id="limit" type="range" min="0" max="100" value="80" />
       <div class="row">
         <span id="level" class="mono">Level: 0</span>
       </div>
@@ -27,15 +32,72 @@
 
     <button id="toggle">Go</button>
 
+    <div class="device-row">
+      <span id="device-name" class="device-name"></span>
+    </div>
+
     <label class="check">
       <input type="checkbox" id="listen-on-start" checked />
       Listen on start
     </label>
 
+    <label class="check">
+      <input type="checkbox" id="auto-gain" checked />
+      Auto gain control
+    </label>
+
+    <details class="advanced">
+      <summary>Advanced</summary>
+
+      <div class="row">
+        <label for="processor-select">Typing filter</label>
+        <select id="processor-select">
+          <option value="legacy">Legacy (jump detection)</option>
+          <option value="crest">Crest factor</option>
+        </select>
+      </div>
+      <div class="desc">Algorithm that distinguishes typing from speech. Crest factor uses peak/RMS ratio.</div>
+
+      <div class="row">
+        <label for="crest-threshold">Crest threshold</label>
+        <span id="crest-threshold-value" class="mono">10</span>
+      </div>
+      <input id="crest-threshold" type="range" min="4" max="20" step="1" value="10" />
+      <div class="desc">Lower = stricter (rejects more as typing). Higher = more permissive (treats more as speech).</div>
+
+      <div class="row">
+        <label for="release">Release</label>
+        <span id="release-value" class="mono">0.4</span>
+      </div>
+      <input id="release" type="range" min="0.05" max="0.95" step="0.05" value="0.4" />
+      <div class="desc">How fast the meter drops after sound ends. Higher = less typing accumulation.</div>
+
+      <div class="row">
+        <label for="min-consecutive">Min consecutive</label>
+        <span id="min-consecutive-value" class="mono">3</span>
+      </div>
+      <input id="min-consecutive" type="range" min="1" max="6" step="1" value="3" />
+      <div class="desc">Samples above threshold before triggering. Higher = more typing rejection.</div>
+
+      <div class="row">
+        <label for="warn-hold">Yellow flash (ms)</label>
+        <span id="warn-hold-value" class="mono">200</span>
+      </div>
+      <input id="warn-hold" type="range" min="50" max="1000" step="50" value="200" />
+      <div class="desc">How long the yellow border stays after you drop below the warning threshold.</div>
+
+      <div class="row">
+        <label for="limit-hold">Red flash (ms)</label>
+        <span id="limit-hold-value" class="mono">800</span>
+      </div>
+      <input id="limit-hold" type="range" min="200" max="2000" step="50" value="800" />
+      <div class="desc">How long the red border stays after you drop below the limit threshold.</div>
+    </details>
+
     <p class="hint">
-      Set the threshold just above your normal speaking level. When you cross it,
-      a red border flashes around your whole screen — even when this popover is
-      closed.
+      Set Warning just above your normal speaking level (yellow flash). Set
+      Limit higher for when you're really too loud (red flash, persists longer).
+      All flashes work even when this popover is closed.
     </p>
 
     <footer>
