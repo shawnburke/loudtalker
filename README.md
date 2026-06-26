@@ -7,6 +7,9 @@ threshold you set — so you notice and dial it back, even mid-Zoom.
 
 Built with Electron + TypeScript.
 
+<img width="434" height="440" alt="image" src="https://github.com/user-attachments/assets/033494b5-f233-4061-93d7-7b25b5f9abfe" />
+
+
 ## Features
 
 - **Menu-bar app** — no dock icon, no window clutter. Click the menu-bar icon for
