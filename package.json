@@ -4,12 +4,14 @@
   "description": "Visual feedback to keep your voice volume in check on calls.",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && npm run copy-assets",
+    "build": "tsc && npm run copy-assets && npm run bundle-renderer",
     "copy-assets": "cp src/renderer/*.html src/renderer/*.css dist/renderer/",
+    "bundle-renderer": "esbuild src/renderer/main_renderer.ts --bundle --outfile=dist/renderer/main_renderer.js --platform=browser --format=iife",
     "start": "npm run build && electron .",
     "dev": "npm run start",
     "package": "npm run build && electron-builder --mac",
-    "package:dir": "npm run build && electron-builder --mac --dir"
+    "package:dir": "npm run build && electron-builder --mac --dir",
+    "test": "vitest run"
   },
   "build": {
     "appId": "com.shawnburke.loud-talker",
@@ -29,6 +31,8 @@
     "@types/node": "^22.9.0",
     "electron": "^33.2.0",
     "electron-builder": "^26.15.3",
-    "typescript": "^5.6.3"
+    "esbuild": "^0.28.1",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.9"
   }
 }
