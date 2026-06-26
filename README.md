@@ -129,4 +129,4 @@ scripts/
 
 ## License
 
-MIT
+GPL-3
