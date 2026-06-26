@@ -6,6 +6,7 @@ import {
   nativeImage,
   screen,
   session,
+  shell,
   systemPreferences,
   Tray,
 } from 'electron';
@@ -145,9 +146,9 @@ function createTray(): void {
   iconNormal = nativeImage.createFromPath(iconPath(''));
   iconNormal.setTemplateImage(true);
   iconWarning = nativeImage.createFromPath(iconPath('Warning'));
-  iconWarning.setTemplateImage(true);
+  iconWarning.setTemplateImage(false);
   iconLimit = nativeImage.createFromPath(iconPath('Limit'));
-  iconLimit.setTemplateImage(true);
+  iconLimit.setTemplateImage(false);
 
   tray = new Tray(iconNormal);
   tray.setToolTip('Loud Talker');
@@ -173,15 +174,17 @@ app.whenReady().then(() => {
     (_wc, permission, callback) => callback(permission === 'media'),
   );
 
-  ipcMain.handle('request-mic', async () => {
+  // Just a signal to proceed — the real OS permission prompt is handled by
+  // getUserMedia in the renderer, which correctly checks macOS TCC.
+  // Avoid getMediaAccessStatus here: each dev rebuild changes the code
+  // signature, so TCC can't match the previously-granted permission and
+  // returns 'denied' even when the user has enabled it.
+  ipcMain.handle('request-mic', () => true);
+
+  ipcMain.on('open-mic-settings', () => {
     if (process.platform === 'darwin') {
-      try {
-        return await systemPreferences.askForMediaAccess('microphone');
-      } catch {
-        return false;
-      }
+      shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
     }
-    return true;
   });
 
   // Forward loud-state from the meter to the flash overlay + tray title.
