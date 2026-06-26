@@ -16,7 +16,11 @@ let panel: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
 
 let running = false; // meter active?
-let loud = false; // currently over threshold?
+let loud: LoudState = 'off';
+
+let iconNormal: Electron.NativeImage;
+let iconWarning: Electron.NativeImage;
+let iconLimit: Electron.NativeImage;
 
 const PANEL_WIDTH = 430;
 const PANEL_HEIGHT = 540;
@@ -118,21 +122,34 @@ function togglePanel(): void {
   panel.isVisible() ? panel.hide() : showPanel();
 }
 
+function iconPath(variant: string): string {
+  return path.join(app.getAppPath(), 'assets', `trayTemplate${variant}.png`);
+}
+
 function updateTray(): void {
   if (!tray) return;
-  // The template icon is always visible; the title shows live state.
-  tray.setTitle(loud ? ' 🔴' : '');
+  const img = loud === 'limit' ? iconLimit : loud === 'warning' ? iconWarning : iconNormal;
+  tray.setImage(img);
   tray.setToolTip(
-    loud ? 'Too loud!' : running ? 'Loud Talker — listening' : 'Loud Talker — idle',
+    loud === 'off'
+      ? running
+        ? 'Loud Talker — listening'
+        : 'Loud Talker — idle'
+      : loud === 'warning'
+        ? 'Too loud!'
+        : 'Way too loud!',
   );
 }
 
 function createTray(): void {
-  const icon = nativeImage.createFromPath(
-    path.join(app.getAppPath(), 'assets', 'trayTemplate.png'),
-  );
-  icon.setTemplateImage(true);
-  tray = new Tray(icon);
+  iconNormal = nativeImage.createFromPath(iconPath(''));
+  iconNormal.setTemplateImage(true);
+  iconWarning = nativeImage.createFromPath(iconPath('Warning'));
+  iconWarning.setTemplateImage(true);
+  iconLimit = nativeImage.createFromPath(iconPath('Limit'));
+  iconLimit.setTemplateImage(true);
+
+  tray = new Tray(iconNormal);
   tray.setToolTip('Loud Talker');
   updateTray();
 
@@ -168,10 +185,10 @@ app.whenReady().then(() => {
   });
 
   // Forward loud-state from the meter to the flash overlay + tray title.
-  ipcMain.on('loud-state', (_e, isLoud: boolean) => {
-    loud = isLoud;
+  ipcMain.on('loud-state', (_e, state: LoudState) => {
+    loud = state;
     if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.webContents.send('loud-state', isLoud);
+      overlayWindow.webContents.send('loud-state', state);
     }
     updateTray();
   });

@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('loudTalker', {
-  sendLoudState: (isLoud: boolean) => ipcRenderer.send('loud-state', isLoud),
+  sendLoudState: (state: LoudState) => ipcRenderer.send('loud-state', state),
   setRunning: (isRunning: boolean) => ipcRenderer.send('meter-running', isRunning),
-  onLoudState: (cb: (isLoud: boolean) => void) =>
-    ipcRenderer.on('loud-state', (_e, isLoud: boolean) => cb(isLoud)),
+  onLoudState: (cb: (state: LoudState) => void) =>
+    ipcRenderer.on('loud-state', (_e, state: LoudState) => cb(state)),
   requestMic: () => ipcRenderer.invoke('request-mic'),
   quit: () => ipcRenderer.send('quit'),
 });
