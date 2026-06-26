@@ -5,13 +5,11 @@ const quitBtn = document.getElementById('quit') as HTMLButtonElement;
 const listenOnStartEl = document.getElementById('listen-on-start') as HTMLInputElement;
 const autoGainEl = document.getElementById('auto-gain') as HTMLInputElement;
 const deviceNameEl = document.getElementById('device-name') as HTMLSpanElement;
-const statusEl = document.getElementById('status') as HTMLSpanElement;
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
 const warningInput = document.getElementById('warning') as HTMLInputElement;
 const warningValueEl = document.getElementById('warning-value') as HTMLSpanElement;
 const limitInput = document.getElementById('limit') as HTMLInputElement;
 const limitValueEl = document.getElementById('limit-value') as HTMLSpanElement;
-const levelEl = document.getElementById('level') as HTMLSpanElement;
 const releaseInput = document.getElementById('release') as HTMLInputElement;
 const releaseValueEl = document.getElementById('release-value') as HTMLSpanElement;
 const warnHoldInput = document.getElementById('warn-hold') as HTMLInputElement;
@@ -25,26 +23,29 @@ const crestThresholdInput = document.getElementById('crest-threshold') as HTMLIn
 const crestThresholdValueEl = document.getElementById('crest-threshold-value') as HTMLSpanElement;
 const micDeniedEl = document.getElementById('mic-denied') as HTMLDivElement;
 const openMicSettingsBtn = document.getElementById('open-mic-settings') as HTMLButtonElement;
+const statusDot = document.getElementById('status-dot') as HTMLSpanElement;
+const statusLabel = document.getElementById('status-label') as HTMLSpanElement;
+const levelFill = document.getElementById('level-fill') as HTMLDivElement;
+const levelNum = document.getElementById('level-num') as HTMLSpanElement;
+const tickWarn = document.getElementById('tick-warn') as HTMLDivElement;
+const tickLimit = document.getElementById('tick-limit') as HTMLDivElement;
 const g = canvas.getContext('2d')!;
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
 // --- Tunables ---
-const SAMPLE_MS = 33; // ~30 Hz; timer-based so it runs while popover is hidden
+const SAMPLE_MS = 33;
+const GATE_DB = -55;
+const DB_MIN = -60;
+const DB_MAX = 0;
+const ATTACK = 0.5;
+let RELEASE = 0.4;
+let MIN_CONSECUTIVE = 3;
+let WARN_HOLD_MS = 200;
+let LIMIT_HOLD_MS = 800;
 
-const GATE_DB = -55; // quieter than this counts as silence (never trips)
-const DB_MIN = -60; // bottom of the displayed scale
-const DB_MAX = 0; // top of the displayed scale
-const ATTACK = 0.5; // smoothing when getting louder (fast)
-let RELEASE = 0.4; // smoothing when getting quieter
-let MIN_CONSECUTIVE = 3; // samples above threshold before triggering
-let WARN_HOLD_MS = 200; // yellow flash hold after dropping below warning
-let LIMIT_HOLD_MS = 800; // red flash hold after dropping below limit
-
-// --- Device classification (for display only) ---
 type DeviceClass = 'builtin' | 'headset' | 'external' | 'unknown';
-
 let deviceClass: DeviceClass = 'unknown';
 let micLabel = '';
 
@@ -55,15 +56,13 @@ function classifyDevice(label: string): DeviceClass {
   return 'external';
 }
 
-// Thresholds are stored keyed by the actual mic label (e.g. "warning_MacBook Pro Microphone")
-// so separate devices keep their own settings.
 function storageKey(prefix: string): string {
   return micLabel ? `${prefix}_${micLabel}` : prefix;
 }
 
-// --- Thresholds (persisted per microphone name) ---
-const DEFAULT_WARN = 60;
-const DEFAULT_LIMIT = 80;
+// --- Thresholds ---
+const DEFAULT_WARN = 65;
+const DEFAULT_LIMIT = 75;
 
 const saved = localStorage.getItem('warning') ?? localStorage.getItem('threshold');
 warningInput.value = saved ?? String(DEFAULT_WARN);
@@ -75,12 +74,22 @@ let limitThreshold = Number(limitInput.value);
 warningValueEl.textContent = String(warningThreshold);
 limitValueEl.textContent = String(limitThreshold);
 
+function updateSliderFill(input: HTMLInputElement, color: string): void {
+  const pct = (Number(input.value) / 100) * 100;
+  input.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #22252b ${pct}%, #22252b 100%)`;
+}
+
+updateSliderFill(warningInput, '#e8b931');
+updateSliderFill(limitInput, '#ef4444');
+
 warningInput.addEventListener('input', () => {
   let val = Number(warningInput.value);
   if (val > limitThreshold) { val = limitThreshold; warningInput.value = String(val); }
   warningThreshold = val;
   warningValueEl.textContent = String(val);
+  updateSliderFill(warningInput, '#e8b931');
   localStorage.setItem(storageKey('warning'), String(val));
+  updateTickPositions();
   draw();
 });
 
@@ -89,11 +98,19 @@ limitInput.addEventListener('input', () => {
   if (val < warningThreshold) { val = warningThreshold; limitInput.value = String(val); }
   limitThreshold = val;
   limitValueEl.textContent = String(val);
+  updateSliderFill(limitInput, '#ef4444');
   localStorage.setItem(storageKey('limit'), String(val));
+  updateTickPositions();
   draw();
 });
 
-// --- "Listen on start" preference (persisted, default on) ---
+function updateTickPositions(): void {
+  tickWarn.style.left = `${warningThreshold}%`;
+  tickLimit.style.left = `${limitThreshold}%`;
+}
+updateTickPositions();
+
+// --- Prefs ---
 const listenPref = localStorage.getItem('listenOnStart');
 const listenOnStart = listenPref === null ? true : listenPref === 'true';
 listenOnStartEl.checked = listenOnStart;
@@ -101,7 +118,6 @@ listenOnStartEl.addEventListener('change', () => {
   localStorage.setItem('listenOnStart', String(listenOnStartEl.checked));
 });
 
-// --- Auto gain control preference (persisted, default on) ---
 const autoGainPref = localStorage.getItem('autoGain');
 const autoGain = autoGainPref === null ? true : autoGainPref === 'true';
 autoGainEl.checked = autoGain;
@@ -113,7 +129,7 @@ autoGainEl.addEventListener('change', () => {
   }
 });
 
-// --- Advanced tunables (persisted, applies live) ---
+// --- Advanced tunables ---
 function loadAdvanced(): void {
   const defs: [string, string, (v: string) => void][] = [
     ['release', '0.4', (v) => { RELEASE = Number(v); releaseInput.value = v; releaseValueEl.textContent = v; }],
@@ -156,6 +172,7 @@ limitHoldInput.addEventListener('input', () => {
   localStorage.setItem('limitHoldMs', v);
 });
 
+// --- Processor ---
 const savedCrestThreshold = Number(localStorage.getItem('crestThreshold') ?? '10');
 crestThresholdInput.value = String(savedCrestThreshold);
 crestThresholdValueEl.textContent = String(savedCrestThreshold);
@@ -186,7 +203,7 @@ let timeData: Float32Array<ArrayBuffer> | null = null;
 let timerId: number | null = null;
 let running = false;
 
-let displayLevel = 0; // smoothed 0..100
+let displayLevel = 0;
 let loud: LoudState = 'off';
 let lastWarningTime = 0;
 let lastLimitTime = 0;
@@ -199,19 +216,56 @@ function dbToLevel(db: number): number {
   return ((clamped - DB_MIN) / (DB_MAX - DB_MIN)) * 100;
 }
 
+function graphColor(state: LoudState): string {
+  return state === 'limit' ? '#ef4444' : state === 'warning' ? '#e8b931' : '#e9ebef';
+}
+
 function setLoud(next: LoudState): void {
   if (next === loud) return;
   loud = next;
   window.loudTalker.sendLoudState(loud);
-  statusEl.textContent = loud === 'limit' ? 'LIMIT' : loud === 'warning' ? 'TOO LOUD' : 'Listening';
-  statusEl.classList.toggle('loud', loud !== 'off');
+
+  if (!running) {
+    statusDot.style.background = '#5b616b';
+    statusDot.classList.remove('pulse');
+    statusLabel.textContent = 'Idle';
+    statusLabel.style.color = '#5b616b';
+    return;
+  }
+
+  if (loud === 'off') {
+    statusDot.style.background = '#8a8f98';
+    statusDot.classList.add('pulse');
+    statusLabel.textContent = 'Listening';
+    statusLabel.style.color = '#9aa0a9';
+  } else if (loud === 'warning') {
+    statusDot.style.background = '#e8b931';
+    statusDot.classList.add('pulse');
+    statusLabel.textContent = 'Getting loud';
+    statusLabel.style.color = '#e8b931';
+  } else {
+    statusDot.style.background = '#ef4444';
+    statusDot.classList.add('pulse');
+    statusLabel.textContent = 'TOO LOUD';
+    statusLabel.style.color = '#ef4444';
+  }
+}
+
+function updateLevelMeter(): void {
+  levelNum.textContent = String(Math.round(displayLevel));
+  levelFill.style.width = `${displayLevel}%`;
+  levelFill.className = 'level-fill' + (loud === 'limit' ? ' state-alert' : loud === 'warning' ? ' state-warning' : '');
 }
 
 async function start(): Promise<void> {
   micDeniedEl.classList.add('hidden');
   const granted = await window.loudTalker.requestMic();
   if (!granted) {
-    statusEl.textContent = 'Mic permission denied';
+    setLoud('off');
+    statusDot.style.background = '#5b616b';
+    statusDot.classList.remove('pulse');
+    statusLabel.textContent = 'Mic permission denied';
+    statusLabel.style.color = '#ff6b6b';
     micDeniedEl.classList.remove('hidden');
     return;
   }
@@ -224,7 +278,10 @@ async function start(): Promise<void> {
       },
     });
   } catch {
-    statusEl.textContent = 'Mic permission denied';
+    statusDot.style.background = '#5b616b';
+    statusDot.classList.remove('pulse');
+    statusLabel.textContent = 'Mic permission denied';
+    statusLabel.style.color = '#ff6b6b';
     micDeniedEl.classList.remove('hidden');
     return;
   }
@@ -239,12 +296,15 @@ async function start(): Promise<void> {
     warningThreshold = Number(devWarn);
     warningInput.value = devWarn;
     warningValueEl.textContent = devWarn;
+    updateSliderFill(warningInput, '#e8b931');
   }
   if (devLimit !== null) {
     limitThreshold = Number(devLimit);
     limitInput.value = devLimit;
     limitValueEl.textContent = devLimit;
+    updateSliderFill(limitInput, '#ef4444');
   }
+  updateTickPositions();
   draw();
 
   audioCtx = new AudioContext();
@@ -263,9 +323,7 @@ async function start(): Promise<void> {
   window.loudTalker.setRunning(true);
   toggleBtn.textContent = 'Stop';
   toggleBtn.classList.add('running');
-  statusEl.textContent = 'Listening';
-  // setInterval (not requestAnimationFrame) keeps measuring while the popover
-  // is hidden, so the flash works during calls.
+  setLoud('off');
   timerId = window.setInterval(tick, SAMPLE_MS);
 }
 
@@ -283,10 +341,6 @@ function stop(): void {
 
   toggleBtn.textContent = 'Go';
   toggleBtn.classList.remove('running');
-  setLoud('off');
-  statusEl.textContent = 'Idle';
-  statusEl.classList.remove('loud');
-  deviceNameEl.textContent = '';
   displayLevel = 0;
   lastWarningTime = 0;
   lastLimitTime = 0;
@@ -294,6 +348,9 @@ function stop(): void {
   limitAboveCount = 0;
   processor.reset();
   levels.fill(0);
+  setLoud('off');
+  updateLevelMeter();
+  deviceNameEl.textContent = '';
   draw();
 }
 
@@ -330,7 +387,7 @@ function tick(): void {
   const next: LoudState = inLimit ? 'limit' : inWarn ? 'warning' : 'off';
   setLoud(next);
 
-  levelEl.textContent = 'Level: ' + Math.round(displayLevel);
+  updateLevelMeter();
 
   levels.push(displayLevel);
   levels.shift();
@@ -339,52 +396,62 @@ function tick(): void {
 
 function draw(): void {
   g.clearRect(0, 0, WIDTH, HEIGHT);
-  g.fillStyle = '#010409';
-  g.fillRect(0, 0, WIDTH, HEIGHT);
 
   const limitY = HEIGHT - (limitThreshold / 100) * HEIGHT;
   const warnY = HEIGHT - (warningThreshold / 100) * HEIGHT;
 
-  // red zone (above limit)
-  g.fillStyle = 'rgba(255, 0, 0, 0.08)';
-  g.fillRect(0, 0, WIDTH, limitY);
-
-  // yellow zone (warning to limit)
-  g.fillStyle = 'rgba(255, 200, 0, 0.08)';
-  g.fillRect(0, limitY, WIDTH, warnY - limitY);
-
-  // limit threshold line
-  g.beginPath();
-  g.moveTo(0, limitY);
-  g.lineTo(WIDTH, limitY);
-  g.strokeStyle = '#ff4d4d';
-  g.lineWidth = 1.5;
-  g.setLineDash([6, 4]);
-  g.stroke();
-
-  // warning threshold line
+  // Threshold lines
   g.beginPath();
   g.moveTo(0, warnY);
   g.lineTo(WIDTH, warnY);
-  g.strokeStyle = '#ffae00';
+  g.strokeStyle = '#e8b931';
   g.lineWidth = 1.5;
-  g.setLineDash([6, 4]);
+  g.setLineDash([6, 5]);
+  g.globalAlpha = 0.8;
+  g.stroke();
+
+  g.beginPath();
+  g.moveTo(0, limitY);
+  g.lineTo(WIDTH, limitY);
+  g.strokeStyle = '#ef4444';
+  g.lineWidth = 1.5;
+  g.setLineDash([6, 5]);
+  g.globalAlpha = 0.8;
   g.stroke();
   g.setLineDash([]);
+  g.globalAlpha = 1;
 
-  // volume trace
+  // Waveform area fill
+  const lineColor = graphColor(loud);
+  const areaGrad = g.createLinearGradient(0, 0, 0, HEIGHT);
+  areaGrad.addColorStop(0, lineColor + '40');
+  areaGrad.addColorStop(1, lineColor + '00');
+
+  g.beginPath();
+  g.moveTo(0, HEIGHT);
+  for (let x = 0; x < levels.length; x++) {
+    const y = HEIGHT - (levels[x] / 100) * HEIGHT;
+    g.lineTo(x, y);
+  }
+  g.lineTo(WIDTH, HEIGHT);
+  g.closePath();
+  g.fillStyle = areaGrad;
+  g.fill();
+
+  // Waveform line
   g.beginPath();
   for (let x = 0; x < levels.length; x++) {
     const y = HEIGHT - (levels[x] / 100) * HEIGHT;
     if (x === 0) g.moveTo(x, y);
     else g.lineTo(x, y);
   }
-  g.strokeStyle = loud !== 'off' ? '#ff4d4d' : '#4da6ff';
+  g.strokeStyle = lineColor;
   g.lineWidth = 2;
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
   g.stroke();
 }
 
-// Redraw immediately when the popover is reopened.
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) draw();
 });
@@ -395,12 +462,13 @@ toggleBtn.addEventListener('click', () => {
 });
 openMicSettingsBtn.addEventListener('click', () => window.loudTalker.openMicSettings());
 quitBtn.addEventListener('click', () => window.loudTalker.quit());
+
+setLoud('off');
+updateLevelMeter();
 draw();
 
-// Begin listening automatically when the preference is enabled.
 if (listenOnStart) start();
 
-// Hot-swap when the user plugs/unplugs headphones.
 navigator.mediaDevices.addEventListener('devicechange', () => {
   if (running) {
     stop();

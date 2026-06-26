@@ -146,9 +146,9 @@ function createTray(): void {
   iconNormal = nativeImage.createFromPath(iconPath(''));
   iconNormal.setTemplateImage(true);
   iconWarning = nativeImage.createFromPath(iconPath('Warning'));
-  iconWarning.setTemplateImage(true);
+  iconWarning.setTemplateImage(false);
   iconLimit = nativeImage.createFromPath(iconPath('Limit'));
-  iconLimit.setTemplateImage(true);
+  iconLimit.setTemplateImage(false);
 
   tray = new Tray(iconNormal);
   tray.setToolTip('Loud Talker');

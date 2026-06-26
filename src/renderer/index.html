@@ -14,25 +14,45 @@
 
     <header>
       <h1>Loud Talker</h1>
-      <span id="status" class="status">Idle</span>
+      <div id="status-pill" class="status-pill">
+        <span id="status-dot" class="status-dot"></span>
+        <span id="status-label">Listen on start</span>
+      </div>
     </header>
 
-    <canvas id="graph" width="398" height="200"></canvas>
+    <div class="graph-well">
+      <canvas id="graph" width="398" height="148"></canvas>
+      <span class="graph-db">dB</span>
+    </div>
 
-    <div class="controls">
+    <div class="slider-block">
       <div class="row">
         <label for="warning">Warning</label>
-        <span id="warning-value" class="mono">60</span>
+        <span id="warning-value" class="val-warning">65</span>
       </div>
-      <input id="warning" type="range" min="0" max="100" value="60" />
+      <div class="slider-wrap">
+        <input id="warning" type="range" min="0" max="100" value="65" />
+      </div>
+    </div>
+
+    <div class="slider-block">
       <div class="row">
         <label for="limit">Limit</label>
-        <span id="limit-value" class="mono">80</span>
+        <span id="limit-value" class="val-limit">75</span>
       </div>
-      <input id="limit" type="range" min="0" max="100" value="80" />
-      <div class="row">
-        <span id="level" class="mono">Level: 0</span>
+      <div class="slider-wrap">
+        <input id="limit" type="range" min="0" max="100" value="75" />
       </div>
+    </div>
+
+    <div class="level-row">
+      <span class="level-label">Level</span>
+      <div class="level-track">
+        <div id="level-fill" class="level-fill" style="width: 0%"></div>
+        <div id="tick-warn" class="level-tick lv-warn"></div>
+        <div id="tick-limit" class="level-tick lv-limit"></div>
+      </div>
+      <span id="level-num" class="level-num">0</span>
     </div>
 
     <button id="toggle">Go</button>
@@ -68,7 +88,7 @@
         <span id="crest-threshold-value" class="mono">10</span>
       </div>
       <input id="crest-threshold" type="range" min="4" max="20" step="1" value="10" />
-      <div class="desc">Lower = stricter (rejects more as typing). Higher = more permissive (treats more as speech).</div>
+      <div class="desc">Lower = stricter (rejects more as typing). Higher = more permissive.</div>
 
       <div class="row">
         <label for="release">Release</label>
