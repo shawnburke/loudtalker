@@ -39,6 +39,16 @@ Built with Electron + TypeScript.
 - **Auto-listen on start** (toggleable) and a **persisted threshold** that
   survives restarts.
 
+## Installing
+
+You can either build this repo, just run `make package`, or you can download one of the [releases](https://github.com/shawnburke/loudtalker/releases).
+
+If you install the release DMG, you have to tell MacOS that it's OK to install before you run it:
+
+```bash
+xattr -cr /Applications/Loud\ Talker.app
+```
+
 ## Requirements
 
 - macOS (primary target; Electron is cross-platform, so other platforms are a
