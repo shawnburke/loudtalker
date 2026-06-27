@@ -10,15 +10,18 @@ talking too loudly.
 * App lives in menu bar and watches microphone
 * Uses auto-gain and crest factor to fiilter out other sounds like typing, etc.
 * Stores separate thresholds per device (built-in mic vs headphones)
-* Allows tuning specific thresholds
+* Allows tuning specific thresholds and peak processor type
+  * Jump detection looks for jumps in volume over consequtive samples.  Good for most things
+  * Crest detection filters the stream looking for longer crests (speaking) which is less sensitive to typing and other sounds
 
 When triggered it flashes a yellow or red border around your whole screen, so you see it even when an app is in full-screen mode.
 
 Built with Electron + TypeScript.
 
-<img width="434" height="440" alt="image" src="https://github.com/user-attachments/assets/033494b5-f233-4061-93d7-7b25b5f9abfe" />
+<img width="439" height="582" alt="image" src="https://github.com/user-attachments/assets/54b33278-e5b5-4b86-8522-54bb59501bfd" />
 
-<img width="420" height="526" alt="image" src="https://github.com/user-attachments/assets/5b29e14c-a97b-46ac-b354-2874ca59fc00" />
+<img width="436" height="550" alt="image" src="https://github.com/user-attachments/assets/a5c5a260-91dc-4ffc-8374-377e04f375c1" />
+
 
 ## Features
 
@@ -35,6 +38,16 @@ Built with Electron + TypeScript.
   click and keystroke passes to the app underneath.
 - **Auto-listen on start** (toggleable) and a **persisted threshold** that
   survives restarts.
+
+## Installing
+
+You can either build this repo, just run `make package`, or you can download one of the [releases](https://github.com/shawnburke/loudtalker/releases).
+
+If you install the release DMG, you have to tell MacOS that it's OK to install before you run it:
+
+```bash
+xattr -cr /Applications/Loud\ Talker.app
+```
 
 ## Requirements
 
